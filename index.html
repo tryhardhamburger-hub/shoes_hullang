@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#ffffff"><title>뒷꿈치 밟아 신발 벗기기</title><style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff;touch-action:none;font-family:system-ui,-apple-system,'Noto Sans KR',sans-serif}canvas{display:block;width:100%;height:100%;touch-action:none}#game{position:fixed;inset:0}#hud{position:fixed;top:max(15px,env(safe-area-inset-top));left:15px;z-index:2;pointer-events:none;color:#272727}#hud b{font-size:14px}#hud small{display:block;font-size:11px;color:#888;margin-top:5px}#count{position:fixed;left:50%;top:max(15px,env(safe-area-inset-top));transform:translateX(-50%);font-size:17px;font-weight:850;color:#282828;background:#ffffffef;border:1px solid #eaeaea;border-radius:25px;padding:9px 16px;pointer-events:none;white-space:nowrap;z-index:5;box-shadow:0 3px 18px #0001}#flash{position:fixed;top:72px;left:50%;transform:translateX(-50%);font-size:17px;font-weight:800;color:#ed8055;pointer-events:none;opacity:0;z-index:6;text-shadow:0 1px 5px white}#joystick{display:none;position:fixed;width:118px;height:118px;border-radius:50%;background:#3332;border:2px solid #4443;pointer-events:none;z-index:10;transform:translate(-50%,-50%)}#stick{position:absolute;width:48px;height:48px;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:#3339;box-shadow:0 3px 10px #0002}#help{position:fixed;bottom:max(15px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);pointer-events:none;border-radius:24px;background:#fffffff0;color:#777;border:1px solid #eee;box-shadow:0 4px 15px #0001;font-size:11px;padding:10px 14px;white-space:nowrap}#loading,#error{position:fixed;inset:0;display:grid;place-items:center;background:white;z-index:15;color:#666;font-size:13px;text-align:center;padding:20px}#error{display:none;line-height:1.7}
+
+@font-face{font-family:PixelLocal;src:local("DungGeunMo"),local("Press Start 2P")}
+#timer{position:fixed;right:16px;top:max(16px,env(safe-area-inset-top));z-index:7;background:#fff;color:#252525;border:1px solid #dedede;padding:9px 13px;border-radius:10px;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;min-width:77px;text-align:center}
+#timer.urgent{color:#be3232}
+#hud{display:none}#count{top:max(16px,env(safe-area-inset-top));background:#fff;border:1px solid #dedede;box-shadow:none;border-radius:10px;font-size:15px;padding:10px 15px}#flash{color:#525252;text-shadow:none}#help{z-index:5;box-shadow:none;background:#ffffffef}
+.screen{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:#ffffffd9;backdrop-filter:blur(3px)}.screen.hidden{display:none}
+.panel{text-align:center;position:relative;width:min(450px,95vw);padding:38px 22px;background:#fff;border:1px solid #e5e5e5;border-radius:16px;box-shadow:0 12px 55px #00000010}
+.mini{font-weight:700;font-size:12px;color:#888;letter-spacing:1.4px;margin-bottom:15px}
+.game-title{font-size:clamp(28px,7vw,43px);line-height:1.28;letter-spacing:-1.8px;color:#252525;font-weight:850;text-shadow:none}
+.game-title strong{display:block;color:#252525;text-shadow:none}.panel p{font-size:14px;line-height:1.7;color:#777;margin:19px 0 24px}
+button.game-btn{border:1px solid #292929;background:#292929;color:#fff;font-weight:700;font-size:17px;border-radius:9px;box-shadow:none;padding:14px 35px;cursor:pointer;touch-action:manipulation}button.game-btn:active{background:#555}
+#tutorial{position:fixed;left:50%;top:19%;transform:translateX(-50%);z-index:11;pointer-events:none;width:max-content;max-width:min(92vw,720px);text-align:center;color:#333;background:#fffffff2;border:1px solid #dedede;padding:13px 18px;border-radius:10px;box-shadow:none;font-size:clamp(21px,4.8vw,30px);font-weight:850;line-height:1.45;letter-spacing:-.75px;transition:opacity .45s}#tutorial.hidden{opacity:0}
+#creatorCredit{position:fixed;right:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:8;color:#4b4b4b;background:#ffffffdb;padding:7px 10px;border-radius:6px;font-size:12px;font-weight:700;pointer-events:none}#creatorCredit.is-hidden{display:none}.creator-title{display:block;color:#333;font-size:clamp(18px,4.6vw,23px);font-weight:850;line-height:1.5;margin-top:18px;word-break:keep-all}#resultNumber{font-size:clamp(84px,25vw,145px);font-family:PixelLocal,monospace;font-weight:1000;line-height:1.2;letter-spacing:-6px;color:#282828;text-shadow:none;image-rendering:pixelated}#result .panel{background:#fff}#result .mini{font-size:12px}
+</style></head><body><div id="game"></div><div id="hud"><b>도심 보행 거리</b><small>40초 신발 벗기기</small></div><div id="count">벗긴 신발 : 0</div><div id="flash">훌렁~!</div><div id="joystick"><div id="stick"></div></div><div id="timer">00:40</div><div id="help">이동: 방향키 · WASD / 모바일: 터치 드래그</div><div id="creatorCredit" class="is-hidden">열심히 살아야 되는 햄버거</div><div id="tutorial" class="hidden">사람들의 뒷꿈치를 밟아서 신발을 벗기세요</div>
+<div id="start" class="screen"><div class="panel"><div class="mini">도심 산책로</div><div class="game-title">뒷꿈치 밟아<strong>신발 벗기기</strong></div><div class="creator-title">만든이 : 열심히 살아야 되는 햄버거</div><p>사람들의 뒤꿈치를 밟아보세요!<br>40초 동안 얼마나 많은 신발을 벗길 수 있을까요?</p><button class="game-btn" id="startButton">게임 시작 ▶</button></div></div>
+<div id="result" class="screen hidden"><div class="panel"><div class="mini">TIME OVER!</div><div class="game-title" style="font-size:26px">벗긴 신발 수</div><div id="resultNumber">0</div><p>40초 동안 벗긴 신발</p><button class="game-btn" id="retryButton">↻ 다시하기</button></div></div><div id="loading">3D 월드 준비 중...</div><div id="error">3D 화면을 표시할 수 없습니다. 인터넷 연결과 WebGL 지원 여부를 확인해 주세요.</div>
+<script type="module">
+try{
+const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xffffff);
+const camera=new THREE.OrthographicCamera(-6,6,5,-5,.1,260);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.55));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.setSize(innerWidth,innerHeight);document.getElementById('game').appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0xd8d7d4,2.65));const sun=new THREE.DirectionalLight(0xffffff,2.0);sun.position.set(-6,14,8);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-15;sun.shadow.camera.right=15;sun.shadow.camera.top=15;sun.shadow.camera.bottom=-15;sun.shadow.normalBias=.025;scene.add(sun,sun.target);
+// Subtle neutral Korean pedestrian-street paving, drawn once as a repeating texture.
+const streetCanvas=document.createElement('canvas');streetCanvas.width=1024;streetCanvas.height=1024;const cx=streetCanvas.getContext('2d');
+cx.fillStyle='#bdbdb7';cx.fillRect(0,0,1024,1024);
+// Center pedestrian promenade, side walk zones, and two calm stone edging strips.
+cx.fillStyle='#c7c7c1';cx.fillRect(285,0,454,1024);
+cx.fillStyle='#b1b0a9';cx.fillRect(271,0,14,1024);cx.fillRect(739,0,14,1024);
+cx.fillStyle='#d6d3c9';cx.fillRect(279,0,3,1024);cx.fillRect(742,0,3,1024);
+// Offset-joint stone blocks in muted tones; no colored road marking.
+for(let y=0;y<1024;y+=37){const offset=(Math.floor(y/37)%2)*27;for(let x=-60+offset;x<1090;x+=54){
+ const variation=((Math.floor(x/54)*17+Math.floor(y/37)*11)%9+9)%9;
+ cx.fillStyle=['#c8c8c1','#c4c4be','#c9c8c0','#c5c5bf','#c7c6be','#c2c2bc','#c6c6c0','#cac9c2','#c3c3bd'][variation];
+ cx.fillRect(x+1,y+1,52,35);
+}}
+// low contrast tactile guidance at the walkway edges.
+for(let y=8;y<1024;y+=14){cx.fillStyle='#cbbd83';cx.fillRect(252,y,5,6);cx.fillRect(766,y,5,6)}
+const stTex=new THREE.CanvasTexture(streetCanvas);stTex.colorSpace=THREE.SRGBColorSpace;stTex.wrapS=stTex.wrapT=THREE.RepeatWrapping;stTex.repeat.set(20000/56,20000/56);stTex.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(20000,20000),new THREE.MeshStandardMaterial({map:stTex,roughness:1}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+// Compact architecture in 3x3 reusable tiles; shops are scenery, never cars.
+const townTiles=[];const boxGeo=new THREE.BoxGeometry(1,1,1),cylGeo=new THREE.CylinderGeometry(1,1,1,8),sphereGeo=new THREE.SphereGeometry(1,8,6);
+const buildingColors=['#d4d0ca','#bfc4c6','#d6d0c3','#c8c1ba','#c0c8c4','#ded8cc','#c0bdba','#cfcdc8'];
+const signColors=['#576b70','#827b69','#647c72','#9a8071','#69768a','#766b71'];
+const townMats=new Map();function staticPiece(parent,geo,color,x,y,z,sx,sy,sz){if(!townMats.has(color))townMats.set(color,new THREE.MeshLambertMaterial({color}));const ob=new THREE.Mesh(geo,townMats.get(color));ob.position.set(x,y,z);ob.scale.set(sx,sy,sz);parent.add(ob);return ob}
+function makeTile(ix,iz){const group=new THREE.Group();scene.add(group);
+ // Repeated walkable shopping street; building envelopes remain compatible with collision bounds.
+ for(const side of [-1,1])for(let i=0;i<6;i++){
+   const seed=(i*7+(side>0?9:2)+ix*3+iz*5+60)%buildingColors.length;
+   const z=-23+i*9.2,x=side*20.8;
+   const h=4.6+((seed+i*3)%5)*.65;
+   staticPiece(group,boxGeo,buildingColors[seed],x,h/2,z,11,h,8.2);
+   // Glass shop fronts, cream frames and slim signboards, with subtle local storefront variation.
+   staticPiece(group,boxGeo,'#525f61',side*14.98,1.53,z,.14,2.15,6.5);
+   staticPiece(group,boxGeo,'#95a6a6',side*14.875,1.57,z,.14,1.79,5.85);
+   staticPiece(group,boxGeo,'#e1dcd1',side*14.76,1.68,z,.09,.09,6.2);
+   staticPiece(group,boxGeo,'#e2ded5',side*14.76,1.58,z,.10,1.8,.095);
+   staticPiece(group,boxGeo,signColors[(seed+i)%signColors.length],side*14.74,2.95,z,.15,.48,5.6);
+   staticPiece(group,boxGeo,'#eee8dc',side*14.64,2.95,z,.16,.13,1.7);
+   // Upper windows and balcony frames break up the uniform box silhouettes.
+   for(let k=0;k<2;k++){
+     const wy=3.9+k*1.55;if(wy>h-.25)continue;
+     for(const wz of [-2.2,0,2.2]){
+       staticPiece(group,boxGeo,'#6e797b',side*14.96,wy,z+wz,.07,1.05,1.35);
+       staticPiece(group,boxGeo,'#aebbb8',side*14.87,wy,z+wz,.07,.84,1.12);
+       staticPiece(group,boxGeo,'#d4d1c8',side*14.79,wy,z+wz,.08,.075,1.4);
+     }
+   }
+   if(i%2===0){
+     staticPiece(group,boxGeo,'#8b8b80',side*10.85,.34,z+2.7,.95,.68,.95);
+     staticPiece(group,cylGeo,'#77776b',side*10.85,1.58,z+2.7,.135,2.3,.135);
+     staticPiece(group,sphereGeo,seed%2?'#78916d':'#819477',side*10.85,3.06,z+2.7,.96,.82,.88);
+   }else{
+     // simple street bench / waste bin
+     staticPiece(group,boxGeo,'#8d857a',side*11.2,.49,z+2.4,.5,.16,1.4);
+     staticPiece(group,boxGeo,'#777b79',side*11.2,.85,z+2.4,.12,.70,1.4);
+     staticPiece(group,cylGeo,'#717b78',side*11.6,.46,z-2.0,.25,.86,.25);
+   }
+ }
+ // Smaller human-scale pedestrian details fill the former empty corridor.
+ // Keep a broad open middle lane so the crowd and player can still pass.
+ for(const side of [-1,1]){
+   // A narrow second-level pavement seam visually establishes shopfront sidewalks.
+   staticPiece(group,boxGeo,'#b0afa9',side*9.45,.013,0,.10,.025,55.8);
+   staticPiece(group,boxGeo,'#d1d0c9',side*10.25,.012,0,1.55,.023,55.8);
+   for(let k=0;k<5;k++){
+     const z=-22+k*11.15+(side>0?1.9:0);
+     const v=(k*11+(side>0?7:3)+200)%5;
+     if(v===0||v===3){
+       // Tree, trunk, contained soil plot, and low ground-cover shrubs.
+       staticPiece(group,boxGeo,'#93978a',side*8.0,.22,z,1.14,.44,1.14);
+       staticPiece(group,boxGeo,'#716b60',side*8.0,.452,z,.97,.025,.97);
+       staticPiece(group,cylGeo,'#77705e',side*8.0,1.43,z,.15,2.05,.15);
+       staticPiece(group,sphereGeo,'#789475',side*8.0,3.02,z,.87,.90,.84);
+       staticPiece(group,sphereGeo,'#86a17d',side*8.35,2.85,z-.2,.47,.48,.49);
+     }else if(v===1){
+       // Shopside cafe terrace and plant pots.
+       staticPiece(group,boxGeo,'#b6b3aa',side*10.9,.026,z,2.7,.055,3.5);
+       staticPiece(group,cylGeo,'#8b8276',side*10.1,.56,z,.46,.07,.46);
+       staticPiece(group,cylGeo,'#8b8276',side*10.1,.3,z,.075,.58,.075);
+       for(const dz of [-1.0,1.0]){
+         staticPiece(group,boxGeo,'#777a78',side*10.1,.37,z+dz,.6,.13,.55);
+         staticPiece(group,boxGeo,'#777a78',side*10.1,.64,z+dz*1.25,.6,.52,.10);
+       }
+       staticPiece(group,cylGeo,'#ada79a',side*8.2,.28,z+1.8,.35,.56,.35);
+       staticPiece(group,sphereGeo,'#718c6d',side*8.2,.73,z+1.8,.39,.44,.39);
+     }else if(v===2){
+       // Korean street-side utility objects: neutral sign post and recycling bin.
+       staticPiece(group,cylGeo,'#6b7477',side*9.2,1.07,z,.07,2.1,.07);
+       staticPiece(group,boxGeo,'#e6e2d8',side*9.2,2.05,z,.12,.37,.72);
+       staticPiece(group,boxGeo,'#777f7f',side*8.2,.49,z+1.25,.42,.96,.45);
+       staticPiece(group,boxGeo,'#b6b8ae',side*8.2,.97,z+1.25,.44,.075,.47);
+     }else{
+       // Compact ground-level planter and metal bench.
+       staticPiece(group,boxGeo,'#a6a49b',side*8.2,.29,z,1.12,.56,2.0);
+       for(const dz of [-.54,.12,.68])staticPiece(group,sphereGeo,'#79936f',side*8.2,.66,z+dz,.42,.35,.44);
+       staticPiece(group,boxGeo,'#8a8177',side*10.7,.53,z,.53,.11,1.3);
+       staticPiece(group,boxGeo,'#706e68',side*11.04,.81,z,.13,.55,1.3);
+     }
+   }
+ }
+ // Square stone planters and lamp posts on wide pedestrian edges; keep the central walk unobstructed.
+ for(const side of [-1,1])for(const z of [-19,18]){
+   staticPiece(group,cylGeo,'#727a78',side*12,.9,z,.09,1.8,.09);
+   staticPiece(group,sphereGeo,'#e8e2cb',side*12,1.9,z,.21,.21,.21);
+ }
+ // Batch static decorations into shared-material instancing for mobile performance.
+ const buckets=new Map();for(const ob of [...group.children]){
+   ob.updateMatrix();const key=(ob.geometry===boxGeo?'b':ob.geometry===cylGeo?'c':'s')+':'+ob.material.color.getHexString();
+   if(!buckets.has(key))buckets.set(key,{geo:ob.geometry,mat:ob.material,mats:[]});buckets.get(key).mats.push(ob.matrix.clone());group.remove(ob);
+ }
+ for(const bucket of buckets.values()){
+   const instances=new THREE.InstancedMesh(bucket.geo,bucket.mat,bucket.mats.length);
+   bucket.mats.forEach((matrix,i)=>instances.setMatrixAt(i,matrix));instances.instanceMatrix.needsUpdate=true;instances.frustumCulled=false;group.add(instances);
+ }
+ return group}
+for(let ix=-1;ix<=1;ix++)for(let iz=-1;iz<=1;iz++)townTiles.push({group:makeTile(ix,iz),ix,iz});
+function shiftTown(){const ox=Math.round(player.root.position.x/56)*56,oz=Math.round(player.root.position.z/56)*56;for(const t of townTiles)t.group.position.set(ox+t.ix*56,0,oz+t.iz*56)}
+// Storefronts are solid. Side alleys remain passable; the block pattern wraps.
+function localTile(v){return ((v+28)%56+56)%56-28}
+// Occupied spots around trees, planters and shop terraces are light-weight
+// circular colliders and use exactly the same repeating tile coordinates.
+function hitsStreetscape(x,z,r){
+ const lx=localTile(x),lz=localTile(z);
+ for(const side of [-1,1])for(let k=0;k<5;k++){
+   const zz=-22+k*11.15+(side>0?1.9:0);
+   const v=(k*11+(side>0?7:3)+200)%5;
+   const px=side*(v===1?10.1:v===2?9.2:8.0);
+   const radius=v===1?0.58:v===2?.12:v===4?0.72:.66;
+   if((lx-px)**2+(lz-zz)**2<(r+radius)**2)return true;
+ }
+ return false;
+}
+function hitsAnyScenery(x,z,r){return hitsStorefront(x,z,r)||hitsStreetscape(x,z,r)}
+function hitsStorefront(x,z,r){const xx=Math.abs(localTile(x));if(xx<15.3-r||xx>26.3+r)return false;const zz=localTile(z);for(let i=0;i<6;i++){if(Math.abs(zz-(-23+i*9.2))<4.1+r)return true}return false}
+function preventStorefront(person,previousX,previousZ){let p=person.root.position,r=person.radius*.77;if(!hitsAnyScenery(p.x,p.z,r))return;
+ if(!hitsAnyScenery(previousX,p.z,r)){p.x=previousX;person.velocity.x=0}
+ else if(!hitsAnyScenery(p.x,previousZ,r)){p.z=previousZ;person.velocity.y=0}
+ else {p.x=previousX;p.z=previousZ;person.velocity.set(0,0);if(!person.player)person.stuck+=.1}
+}
+
+
+const MAT=new Map();function mat(c){if(!MAT.has(c))MAT.set(c,new THREE.MeshStandardMaterial({color:c,roughness:.89,metalness:0}));return MAT.get(c)}
+const G={sphere:new THREE.SphereGeometry(1,18,12),cylinder:new THREE.CylinderGeometry(1,1,1,16),cone:new THREE.CylinderGeometry(.7,1,1,16),skirt:new THREE.CylinderGeometry(.56,1,1,18),box:new THREE.BoxGeometry(1,1,1)};
+function shape(group,geo,color,x,y,z,sx,sy,sz){let mesh=new THREE.Mesh(G[geo],mat(color));mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.castShadow=false;group.add(mesh);return mesh}
+const choice=a=>a[Math.floor(Math.random()*a.length)],rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const skins=['#edc3a1','#ddad83','#b98566','#f2cfb4','#9e694d','#d7a177'];
+const hairs=['#242126','#3a2b25','#684734','#17191c','#7b6551','#b4a591','#a4744f'];
+const tops=['#688cab','#bd7f66','#cfb94b','#6f9d83','#a18ac3','#d26d80','#f0d9b7','#4d617b','#b6a47a','#a9b3bb','#9b5a53','#6d8091','#d9c5a0','#6d6b62','#438a96','#d7a1bb'];
+const bottoms=['#2e3b4c','#514a42','#777366','#3e565f','#7c706f','#a9a18f','#344554','#66516a','#4d5653','#313945','#987e61'];
+const shoeColors=['#222831','#f4eee3','#685347','#88877d','#4c5358','#ae9b82','#333335','#bca69a'];
+const extras=['#e4c7a8','#fff9e7','#314358','#be4545','#e2e2e2','#3d6a7a'];
+// Pivots remain separate so hips, knees, shoulders and elbows actually articulate.
+function createPerson(kind,player=false){
+ const root=new THREE.Group();scene.add(root);const bob=new THREE.Group();root.add(bob);
+ const skin=player?'#e0ab89':choice(skins),hair=player?'#29282b':choice(hairs),top=player?'#6e91b7':choice(tops),bottom=player?'#495364':choice(bottoms),shoe=player?'#303943':choice(shoeColors);
+ const elderly=kind==='grandpa'||kind==='grandma',child=kind==='child',female=kind==='woman'||kind==='grandma',style=player?'shirt':choice(['shirt','shirt','jacket','sweater','striped','vest','dress','coat','hoodie']);
+ const width=child?.86:elderly?1.0:rand(.88,1.06);const scale=child?rand(.68,.79):elderly?rand(.86,.96):rand(.95,1.08);
+ root.scale.setScalar(player?1:scale);
+ shape(bob,'cylinder',top,0,2.30,0,.28*width,.49,.20*width);
+ shape(bob,'sphere',top,0,2.69,0,.29*width,.12,.21*width);
+ shape(bob,'sphere',bottom,0,1.70,0,.285*width,.245,.215*width);
+ if(style==='dress'||(female&&style==='coat'))shape(bob,'skirt',style==='dress'?top:bottom,0,1.59,0,.34*width,.37,.28*width);
+ if(style==='coat'){shape(bob,'box',top,0,2.05,-.155,.20,.55,.07);shape(bob,'box',choice(extras),0,2.37,-.201,.045,.25,.012)}
+ if(style==='vest')shape(bob,'box',choice(extras),0,2.30,-.203,.13,.32,.022);
+ if(style==='jacket'){shape(bob,'box',choice(extras),0,2.33,-.205,.06,.40,.022)}
+ if(style==='striped')for(let i=0;i<3;i++)shape(bob,'box',choice(extras),0,2.14+i*.16,-.207,.265,.025,.014);
+ if(style==='hoodie')shape(bob,'sphere',top,0,2.71,.17,.28,.18,.10);
+ shape(bob,'cylinder',skin,0,2.84,0,.09,.08,.085);
+ const headStart=bob.children.length;
+ const faceMesh=shape(bob,'sphere',skin,0,3.11,-.014,.232,.280,.232);
+ faceMesh.material=mat(skin).clone();
+ const normalFace=new THREE.Color(skin);
+ if(kind==='grandpa'||kind==='grandma'){
+  shape(bob,'sphere',hair,0,3.29,.015,.238,.10,.235);
+  if(kind==='grandma')shape(bob,'sphere',hair,0,3.17,.22,.19,.20,.13);
+ }else{
+  let hairStyle=choice(['cap','sweep','short','long','bun']);
+  shape(bob,'sphere',hair,0,3.285,.015,.24,.13,.238);
+  if(hairStyle==='sweep')shape(bob,'sphere',hair,-.10,3.30,-.16,.16,.08,.15);
+  if((female||hairStyle==='long')&&hairStyle!=='bun')shape(bob,'sphere',hair,0,3.10,.19,.24,.24,.14);
+  if(hairStyle==='bun')shape(bob,'sphere',hair,0,3.29,.245,.13,.14,.12);
+ }
+ for(let s of [-1,1]){
+   shape(bob,'sphere',skin,s*.218,3.09,0,.062,.075,.055);
+   shape(bob,'sphere','#2b292b',s*.108,3.12,-.219,.025,.031,.012);
+ }
+ shape(bob,'sphere',skin,0,3.07,-.239,.042,.045,.059);
+ // All facial features belong to one separate head pivot. Only the head
+ // turns to look behind; torso and legs keep their position.
+ const headPivot=new THREE.Group();headPivot.position.set(0,2.86,0);
+ for(const part of bob.children.slice(headStart)){bob.remove(part);headPivot.add(part);part.position.y-=2.86}
+ bob.add(headPivot);
+ const arms=[],legs=[];
+ for(const side of [-1,1]){
+  // Every segment runs THROUGH its joint rather than ending at the joint.
+  // The overlap prevents any visible air gap while the pivots animate.
+  const shoulder=new THREE.Group();shoulder.position.set(side*.335*width,2.63,0);bob.add(shoulder);
+  shape(shoulder,'sphere',top,0,-.10,0,.145,.17,.135);
+  shape(shoulder,'cylinder',top,0,-.325,0,.091,.37,.094); // -0.695 .. 0.045
+  const elbow=new THREE.Group();elbow.position.set(0,-.615,0);shoulder.add(elbow);
+  const sleeve=style==='coat'||style==='jacket'||style==='hoodie'||style==='sweater';
+  shape(elbow,'sphere',sleeve?top:skin,0,0,0,.094,.105,.093);
+  shape(elbow,'cylinder',sleeve?top:skin,0,-.235,0,.078,.315,.081); // -0.55 .. 0.08
+  shape(elbow,'sphere',skin,0,-.52,0,.084,.12,.085);
+  arms.push({shoulder,elbow,side,pitch:0,pitchV:0,roll:0,rollV:0,bend:0,bendV:0});
+
+  const hip=new THREE.Group();hip.position.set(side*.15*width,1.71,0);bob.add(hip);
+  shape(hip,'sphere',bottom,0,-.12,0,.145,.19,.14);
+  shape(hip,'cylinder',bottom,0,-.43,0,.11,.49,.114); // -0.92 .. 0.06
+  const knee=new THREE.Group();knee.position.set(0,-.84,0);hip.add(knee);
+  shape(knee,'sphere',bottom,0,0,0,.11,.14,.108);
+  shape(knee,'cylinder',bottom,0,-.385,0,.097,.46,.10); // -0.845 .. 0.075
+  const foot=new THREE.Group();foot.position.set(0,-.76,-.035);knee.add(foot);
+  // Shoes merge with pant cuffs at ankle; no unattached shoe floating below the shin.
+  // Bare foot stays permanently attached to the ankle. A shoe is an overlay,
+  // not the foot itself; removing footwear never removes the foot or toes.
+  const bare=new THREE.Group();foot.add(bare);bare.visible=false;
+  shape(bare,'sphere',skin,0,-.022,-.135,.105,.088,.205);
+  shape(bare,'sphere',skin,0,-.044,-.275,.110,.064,.102);
+  for(let toe=0;toe<4;toe++)shape(bare,'sphere',skin,(toe-1.5)*.052,-.049,-.337,.027,.032,.043);
+  const shoeGroup=new THREE.Group();foot.add(shoeGroup);
+  shape(shoeGroup,'sphere',shoe,0,-.015,-.04,.111,.14,.13);
+  shape(shoeGroup,'sphere','#313338',0,-.086,-.16,.139,.075,.24);
+  shape(shoeGroup,'sphere',shoe,0,-.031,-.145,.14,.10,.22);
+  shape(shoeGroup,'sphere',shoe,0,-.05,-.31,.132,.075,.115);
+  if(shoe==='#f4eee3')shape(shoeGroup,'box','#c7c6c4',0,-.075,-.2,.12,.015,.22);
+  legs.push({hip,knee,foot,bare,shoeGroup,shoeOn:true,side});
+ }
+ // Upper-body pivot at the waist: bending no longer tilts the entire person.
+ const upperBody=new THREE.Group();upperBody.position.y=1.72;bob.add(upperBody);
+ for(const childObject of [...bob.children]){
+   if(childObject===upperBody||legs.some(l=>l.hip===childObject))continue;
+   bob.remove(childObject);upperBody.add(childObject);childObject.position.y-=1.72;
+ }
+ const person={root,bob,upperBody,headPivot,faceMesh,normalFace,arms,legs,kind,scale:player?1:scale,radius:(child?.29:.355)*scale,velocity:new THREE.Vector2(),phase:rand(0,Math.PI*2),bodyRoll:0,bodyRollV:0,bodyPitch:0,bodyPitchV:0,rotation:0,desiredAngle:0,speed:player?3.65:rand(1.63,2.50),timer:rand(6.0,13.0),stuck:0,avoidSide:Math.random()<.5?-1:1,collisionTime:0,player,reaction:null,reactionTime:0,reactionDuration:0,lostShoe:null,triggerCooldown:0,missingSide:0,reactionStage:'',reactionHeading:0,reactionLeg:0,headTurn:0,headTurnV:0,picked:false,pickupHidden:false,offscreenShoelessTime:0};
+ if(elderly)person.speed*=.78;if(child)person.speed*=1.08;
+ return person;
+}
+const player=createPerson('man',true);player.root.position.set(0,0,0);
+const NPC_COUNT=75,WORLD_PERIOD=56,crowd=[];
+// Grid-based broad phase: only nearby pedestrians need steering/collision checks.
+const CELL=3.2, neighborGrid=new Map();
+const gridKey=(x,z)=>`${Math.floor(x/CELL)},${Math.floor(z/CELL)}`;
+function rebuildNeighborGrid(){
+ neighborGrid.clear();
+ const entities=[player,...crowd];
+ for(let i=0;i<entities.length;i++){
+  const p=entities[i].root.position,k=gridKey(p.x,p.z);
+  if(!neighborGrid.has(k))neighborGrid.set(k,[]);
+  neighborGrid.get(k).push(i);
+ }
+}
+function nearbyEntities(x,z){
+ const ix=Math.floor(x/CELL),iz=Math.floor(z/CELL),out=[];
+ for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
+  const ids=neighborGrid.get(`${ix+dx},${iz+dz}`);
+  if(ids)for(const id of ids)out.push(id===0?player:crowd[id-1]);
+ }
+ return out;
+}
+function resolveNearbyCollisions(){
+ // Rebuild after movement to resolve overlaps without a 101x101 all-pairs pass.
+ rebuildNeighborGrid();
+ const entities=[player,...crowd];
+ for(let i=0;i<entities.length;i++){
+  const a=entities[i],p=a.root.position;
+  const ix=Math.floor(p.x/CELL),iz=Math.floor(p.z/CELL);
+  for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
+   const ids=neighborGrid.get(`${ix+dx},${iz+dz}`);if(!ids)continue;
+   for(const j of ids)if(j>i)resolveCollision(a,entities[j]);
+  }
+ }
+}
+function canSpawnNPC(x,z,r,others,playerGap=1.7){
+ if(hitsAnyScenery(x,z,r*.85))return false;
+ if(Math.hypot(x-player.root.position.x,z-player.root.position.z)<playerGap)return false;
+ return !others.some(o=>Math.hypot(x-o.root.position.x,z-o.root.position.z)<r+o.radius+.18);
+}
+function placeNPC(npc,others,aroundPlayer=false){
+ const px=player.root.position.x,pz=player.root.position.z;
+ for(let tries=0;tries<650;tries++){
+  let x,z;
+  if(aroundPlayer){const a=rand(-Math.PI,Math.PI),d=rand(13,22);x=px+Math.cos(a)*d;z=pz+Math.sin(a)*d}
+  else {x=rand(-25,25);z=rand(-25,25)}
+  if(!canSpawnNPC(x,z,npc.radius,others,aroundPlayer?10:1.8))continue;
+  npc.root.position.set(x,0,z);return true;
+ }
+ return false;
+}
+for(let i=0;i<NPC_COUNT;i++){
+ const role=choice(['man','woman','man','woman','child','grandpa','grandma']);const npc=createPerson(role);
+ if(!placeNPC(npc,crowd)){
+  // Fall back to a sidewalk lane rather than placing a character inside a shop.
+  for(let trial=0;trial<500;trial++){
+   const x=rand(-6.5,6.5),z=rand(-27,27);
+   if(canSpawnNPC(x,z,npc.radius,crowd)){npc.root.position.set(x,0,z);break}
+  }
+ }
+ npc.desiredAngle=rand(-Math.PI,Math.PI);npc.rotation=npc.desiredAngle;npc.root.rotation.y=npc.rotation;crowd.push(npc);
+}
+let shoeCount=0,flashTime=0;const droppedShoes=[];const countEl=document.getElementById('count'),flashEl=document.getElementById('flash');
+// Recycle only entities beyond the visible screen, preserving an apparently endless white world.
+function wrapNear(value,origin){let delta=value-origin; if(delta>WORLD_PERIOD/2)return value-WORLD_PERIOD;if(delta<-WORLD_PERIOD/2)return value+WORLD_PERIOD;return value}
+function recenterCrowd(){const px=player.root.position.x,pz=player.root.position.z;for(const npc of crowd){npc.root.position.x=wrapNear(npc.root.position.x,px);npc.root.position.z=wrapNear(npc.root.position.z,pz)}for(const shoe of droppedShoes){shoe.mesh.position.x=wrapNear(shoe.mesh.position.x,px);shoe.mesh.position.z=wrapNear(shoe.mesh.position.z,pz)}}
+let audio=null;function enableSound(){try{audio??=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume()}catch{}}
+function playSlipSound(){if(!audio)return;try{const now=audio.currentTime;const buffer=audio.createBuffer(1,Math.floor(audio.sampleRate*.34),audio.sampleRate);let data=buffer.getChannelData(0);for(let i=0;i<data.length;i++){const t=i/audio.sampleRate;data[i]=(Math.random()*2-1)*Math.sin(Math.PI*Math.min(1,t/.34))*(1-t/.34)}const src=audio.createBufferSource();src.buffer=buffer;const filter=audio.createBiquadFilter();filter.type='bandpass';filter.frequency.setValueAtTime(1050,now);filter.frequency.exponentialRampToValueAtTime(270,now+.28);filter.Q.value=.65;const gain=audio.createGain();gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.17,now+.035);gain.gain.exponentialRampToValueAtTime(.0001,now+.34);src.connect(filter).connect(gain).connect(audio.destination);src.start(now);src.stop(now+.34);const osc=audio.createOscillator(),g=audio.createGain();osc.type='sine';osc.frequency.setValueAtTime(500,now);osc.frequency.exponentialRampToValueAtTime(175,now+.3);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.085,now+.024);g.gain.exponentialRampToValueAtTime(.0001,now+.31);osc.connect(g).connect(audio.destination);osc.start(now);osc.stop(now+.32)}catch(err){console.warn('sound:',err)}}
+function ease(u){u=clamp(u,0,1);return u*u*(3-2*u)}
+function blendWindow(t,start,end){return ease((t-start)/(end-start))}
+function startReaction(npc,kind,side){
+ npc.reaction=kind;npc.reactionTime=0;npc.reactionStage='start';npc.reactionLeg=side;
+ npc.reactionHeading=npc.rotation;npc.picked=false;npc.pickupHidden=false;
+ npc.reactionDuration=kind==='fall'?4.2:kind==='limp'?3.45:kind==='retrieve'?20:3.6;
+}
+function lostShoe(npc,legIndex){const leg=npc.legs[legIndex];if(!leg.shoeOn||npc.triggerCooldown>0)return;
+ npc.root.updateMatrixWorld(true);
+ const origin=new THREE.Vector3();leg.shoeGroup.getWorldPosition(origin);
+ const shoeMesh=leg.shoeGroup.clone(true);shoeMesh.visible=true;
+ shoeMesh.position.set(origin.x,Math.max(.24,origin.y+.12),origin.z);
+ shoeMesh.rotation.y=npc.rotation;shoeMesh.scale.setScalar(npc.scale);scene.add(shoeMesh);
+ const outward=leg.side*.54,forwardX=-Math.sin(npc.rotation),forwardZ=-Math.cos(npc.rotation);
+ const vx=npc.velocity.x*.27+Math.cos(npc.rotation)*outward*.53-forwardX*.43+player.velocity.x*.12;
+ const vz=npc.velocity.y*.27-Math.sin(npc.rotation)*outward*.53-forwardZ*.43+player.velocity.y*.12;
+ const shoe={mesh:shoeMesh,npc,legIndex,vx,vz,vy:1.35,spin:rand(-3.5,3.5),age:0,grounded:false,claim:false};
+ droppedShoes.push(shoe);leg.shoeOn=false;leg.shoeGroup.visible=false;leg.bare.visible=true;
+ npc.lostShoe=shoe;npc.offscreenShoelessTime=0;npc.missingSide=leg.side;npc.triggerCooldown=3.6;
+ npc.tutorialHit=true;shoeCount++;countEl.textContent=`벗긴 신발 : ${shoeCount}`;flashEl.style.opacity='1';flashTime=.85;playSlipSound();
+ startReaction(npc,choice(['fall','limp','retrieve','angry']),legIndex);
+}
+function putShoeBack(npc,shoe){
+ const leg=npc.legs[shoe.legIndex];leg.shoeOn=true;leg.shoeGroup.visible=true;leg.bare.visible=false;
+ scene.remove(shoe.mesh);const idx=droppedShoes.indexOf(shoe);if(idx>=0)droppedShoes.splice(idx,1);
+ npc.lostShoe=null;npc.offscreenShoelessTime=0;npc.triggerCooldown=1.4;
+}
+function finishReaction(npc){npc.reaction=null;npc.reactionTime=0;npc.reactionStage='';npc.picked=false;npc.timer=rand(7,13);npc.velocity.multiplyScalar(.45)}
+function shoePhysics(dt){for(let i=droppedShoes.length-1;i>=0;i--){const shoe=droppedShoes[i];shoe.age+=dt;const p=shoe.mesh.position;
+ p.x+=shoe.vx*dt;p.z+=shoe.vz*dt;shoe.vy-=13.5*dt;p.y+=shoe.vy*dt;
+ if(p.y<.14){p.y=.14;if(shoe.vy<-.5)shoe.vy=-shoe.vy*.23;else shoe.vy=0;shoe.grounded=true}
+ const damp=Math.exp(-(shoe.grounded?3.3:.7)*dt);shoe.vx*=damp;shoe.vz*=damp;shoe.mesh.rotation.y+=shoe.spin*dt;shoe.spin*=Math.exp(-3*dt);
+ const dx=p.x-player.root.position.x,dz=p.z-player.root.position.z,d=Math.hypot(dx,dz);const playerSpeed=Math.hypot(player.velocity.x,player.velocity.y);
+ if(!shoe.claim && d<.58 && playerSpeed>.28 && shoe.age>.18){let nx=dx/Math.max(d,.001),nz=dz/Math.max(d,.001);shoe.vx+=nx*playerSpeed*1.35+player.velocity.x*.45;shoe.vz+=nz*playerSpeed*1.35+player.velocity.y*.45;shoe.vy=Math.max(shoe.vy,rand(.35,.8));shoe.spin+=rand(-3.5,3.5);p.x=player.root.position.x+nx*.60;p.z=player.root.position.z+nz*.60;shoe.grounded=false}
+ // Cap memory use without clearing a retrieved shoe during its reaction.
+ if(shoe.age>100&&shoe.npc.lostShoe!==shoe){scene.remove(shoe.mesh);droppedShoes.splice(i,1)}
+ }}
+function heelContacts(){if(gameState!=='playing')return;player.root.updateMatrixWorld(true);const toePoints=player.legs.map(l=>l.foot.localToWorld(new THREE.Vector3(0,-.05,-.28)));const speed=Math.hypot(player.velocity.x,player.velocity.y);if(speed<.65)return;
+ for(const npc of crowd){if(npc.triggerCooldown>0||npc.reaction||Math.hypot(npc.root.position.x-player.root.position.x,npc.root.position.z-player.root.position.z)>1.65)continue;
+ npc.root.updateMatrixWorld(true);
+ const playerLocal=npc.root.worldToLocal(player.root.position.clone());
+ if(playerLocal.z<.18||Math.abs(playerLocal.x)>.75)continue; // Contact must be from behind.
+ for(let j=0;j<2;j++){const leg=npc.legs[j];if(!leg.shoeOn)continue;const heel=leg.foot.localToWorld(new THREE.Vector3(0,-.07,.055));
+ if(toePoints.some(toe=>Math.hypot(toe.x-heel.x,toe.z-heel.z)<.51)) {lostShoe(npc,j);break}
+ }
+ }}
+function facePlayerYaw(npc){
+ const dx=player.root.position.x-npc.root.position.x,dz=player.root.position.z-npc.root.position.z;
+ return clamp(angleDelta(Math.atan2(-dx,-dz),npc.rotation),-1.2,1.2);
+}
+function updateReaction(npc,dt){
+ if(!npc.reaction)return false;
+ npc.reactionTime+=dt;const t=npc.reactionTime,r=npc.reaction;
+ if(r==='fall'){
+  // A knee-first, direction-preserving fall: no whole-body rotation to player.
+  npc.velocity.multiplyScalar(Math.exp(-11*dt));
+  if(t>4.2){finishReaction(npc);return false}
+  return true;
+ }
+ if(r==='limp'){
+  // Three small one-foot hops, preserving the original travel heading.
+  const active=t>.30&&t<2.85;
+  const pace=active?npc.speed*.48:0;
+  const goalX=-Math.sin(npc.reactionHeading)*pace,goalZ=-Math.cos(npc.reactionHeading)*pace;
+  const a=1-Math.exp(-7*dt);
+  npc.velocity.x+=(goalX-npc.velocity.x)*a;npc.velocity.y+=(goalZ-npc.velocity.y)*a;
+  npc.root.position.x+=npc.velocity.x*dt;npc.root.position.z+=npc.velocity.y*dt;
+  if(t>3.45){finishReaction(npc);return false}
+  return true;
+ }
+ if(r==='retrieve'){
+  const shoe=npc.lostShoe;
+  if(!shoe){finishReaction(npc);return false}
+  // First: lose balance, turn the *head* to look at player, and bend to inspect.
+  if(t<1.65){npc.velocity.multiplyScalar(Math.exp(-9*dt));return true}
+  if(!npc.picked){
+   const dx=shoe.mesh.position.x-npc.root.position.x,dz=shoe.mesh.position.z-npc.root.position.z;
+   const d=Math.hypot(dx,dz);
+   // Crucial: no instant pickup immediately after shoe drops; chase begins
+   // only after a full startled/panicked beat and visible shoe landing.
+   if(t>2.5&&d<.57&&shoe.grounded){npc.picked=true;npc.reactionStage='pickup';npc.pickupAt=t;shoe.claim=true;npc.velocity.set(0,0);return true}
+   if(t>19){finishReaction(npc);return false}
+   npc.reactionStage='chase';
+   const aim=Math.atan2(-dx,-dz);npc.rotation+=angleDelta(aim,npc.rotation)*Math.min(1,4*dt);npc.root.rotation.y=npc.rotation;
+   const pace=Math.min(2.65,npc.speed*1.05);
+   const a=1-Math.exp(-4.2*dt);
+   npc.velocity.x+=(dx/Math.max(.01,d)*pace-npc.velocity.x)*a;
+   npc.velocity.y+=(dz/Math.max(.01,d)*pace-npc.velocity.y)*a;
+   npc.root.position.x+=npc.velocity.x*dt;npc.root.position.z+=npc.velocity.y*dt;
+   return true;
+  }
+  npc.velocity.multiplyScalar(Math.exp(-10*dt));
+  const u=t-npc.pickupAt;
+  if(u>.56 && !npc.pickupHidden){shoe.mesh.visible=false;npc.pickupHidden=true}
+  if(u>1.75){putShoeBack(npc,shoe);finishReaction(npc);return false}
+  return true;
+ }
+ if(r==='angry'){
+  npc.velocity.multiplyScalar(Math.exp(-11*dt));
+  if(t<.55){const aim=Math.atan2(-(player.root.position.x-npc.root.position.x),-(player.root.position.z-npc.root.position.z));npc.rotation+=angleDelta(aim,npc.rotation)*Math.min(1,5*dt)}
+  else if(t>2.85){npc.rotation+=angleDelta(npc.reactionHeading,npc.rotation)*Math.min(1,4.5*dt)}
+  npc.root.rotation.y=npc.rotation;
+  if(t>3.6){finishReaction(npc);return false}
+  return true;
+ }
+ return false;
+}
+// NPC recycling: only shoeless walkers that remain fully offscreen for 7 s.
+// We deliberately skip those still playing a reaction so full animations remain visible.
+const SHOELESS_DESPAWN_SECONDS=7;
+function isOffscreen(npc){
+ // Generous camera-independent envelope around the player (actual visible area
+ // is smaller), so a character never pops out while still on screen.
+ const dx=npc.root.position.x-player.root.position.x;
+ const dz=npc.root.position.z-player.root.position.z;
+ return Math.abs(dx)>13 || dz < -18 || dz > 16;
+}
+function destroyLooseShoe(shoe){
+ if(!shoe)return;
+ const at=droppedShoes.indexOf(shoe);
+ if(at!==-1)droppedShoes.splice(at,1);
+ scene.remove(shoe.mesh);
+ shoe.mesh.traverse(obj=>{if(obj.isMesh && obj.geometry && !Object.values(G).includes(obj.geometry))obj.geometry.dispose()});
+}
+function respawnShoelessNPC(index){
+ const old=crowd[index];
+ for(const shoe of [...droppedShoes])if(shoe.npc===old)destroyLooseShoe(shoe);
+ scene.remove(old.root);
+ // All character geometry is shared, except the unique face material.
+ if(old.faceMesh?.material)old.faceMesh.material.dispose();
+ const kind=choice(['man','woman','man','woman','child','grandpa','grandma']);
+ const fresh=createPerson(kind);
+ if(!placeNPC(fresh,crowd.filter((_,j)=>j!==index),true))placeNPC(fresh,crowd.filter((_,j)=>j!==index),false);
+ const spawnX=fresh.root.position.x,spawnZ=fresh.root.position.z;
+ // Long, coherent walking trajectory aimed gently into the playable area.
+ const towardPlayer=Math.atan2(-(player.root.position.x-spawnX),-(player.root.position.z-spawnZ));
+ fresh.desiredAngle=towardPlayer+rand(-.42,.42);
+ fresh.rotation=fresh.desiredAngle;fresh.root.rotation.y=fresh.rotation;
+ crowd[index]=fresh;
+}
+function recycleShoelessCrowd(dt){
+ for(let i=0;i<crowd.length;i++){
+  const npc=crowd[i];
+  const shoeless=npc.legs.some(leg=>!leg.shoeOn);
+  if(!shoeless){npc.offscreenShoelessTime=0;continue}
+  if(isOffscreen(npc))npc.offscreenShoelessTime+=dt;
+  else npc.offscreenShoelessTime=0;
+  if(npc.offscreenShoelessTime>=SHOELESS_DESPAWN_SECONDS && !npc.reaction){
+   respawnShoelessNPC(i);
+  }
+ }
+}
+// Main menu, movement-triggered tutorial, active 40s run, score and replay.
+let gameState='menu',remaining=40,tutorialTime=0;
+const timerEl=document.getElementById('timer'),tutorialEl=document.getElementById('tutorial'),startScreen=document.getElementById('start'),resultScreen=document.getElementById('result');
+function removeShoeObjects(){for(const shoe of [...droppedShoes])destroyLooseShoe(shoe)}
+function resetGame(){
+ removeShoeObjects();shoeCount=0;countEl.textContent='벗긴 신발 : 0';flashTime=0;flashEl.style.opacity='0';
+ player.root.position.set(0,0,0);player.velocity.set(0,0);player.rotation=0;player.root.rotation.y=0;player.phase=0;
+ const oldCrowd=[...crowd];const freshCrowd=[];
+ for(let i=0;i<oldCrowd.length;i++){
+  const old=oldCrowd[i];scene.remove(old.root);old.faceMesh?.material?.dispose();
+  const npc=createPerson(choice(['man','woman','child','grandpa','grandma']));
+  placeNPC(npc,freshCrowd);
+  npc.desiredAngle=rand(-Math.PI,Math.PI);npc.rotation=npc.desiredAngle;npc.root.rotation.y=npc.rotation;npc.tutorialHit=false;freshCrowd.push(npc);
+ }
+ crowd.splice(0,crowd.length,...freshCrowd);
+ remaining=40;tutorialTime=0;gameState='tutorial';timerEl.textContent='00:40';timerEl.classList.remove('urgent');tutorialEl.classList.remove('hidden');startScreen.classList.add('hidden');resultScreen.classList.add('hidden');document.getElementById('creatorCredit').classList.remove('is-hidden');
+ follow.set(player.root.position.x,0,player.root.position.z-2.05);clearTouch();keys.clear();enableSound();
+}
+function endGame(){gameState='result';document.getElementById('resultNumber').textContent=String(shoeCount);resultScreen.classList.remove('hidden');tutorialEl.classList.add('hidden');document.getElementById('creatorCredit').classList.add('is-hidden');clearTouch();keys.clear()}
+document.getElementById('startButton').addEventListener('click',resetGame);
+document.getElementById('retryButton').addEventListener('click',resetGame);
+// Inputs: screen-left really moves screen-left. The camera has no yaw.
+const keys=new Set(),joy={active:false,id:null,x:0,y:0,vx:0,vy:0};const ring=document.getElementById('joystick'),stick=document.getElementById('stick');
+renderer.domElement.addEventListener('pointerdown',e=>{enableSound();if(e.pointerType==='mouse'||joy.active)return;e.preventDefault();joy.active=true;joy.id=e.pointerId;joy.x=e.clientX;joy.y=e.clientY;joy.vx=joy.vy=0;ring.style.display='block';ring.style.left=joy.x+'px';ring.style.top=joy.y+'px';stick.style.left='50%';stick.style.top='50%';try{renderer.domElement.setPointerCapture(e.pointerId)}catch{}} ,{passive:false});
+window.addEventListener('pointermove',e=>{if(!joy.active||e.pointerId!==joy.id)return;e.preventDefault();const x=e.clientX-joy.x,y=e.clientY-joy.y,r=Math.hypot(x,y),sc=r>43?43/r:1,ox=x*sc,oy=y*sc;joy.vx=ox/43;joy.vy=oy/43;stick.style.left=`calc(50% + ${ox}px)`;stick.style.top=`calc(50% + ${oy}px)`},{passive:false});
+function clearTouch(e){if(e&&e.pointerId!==joy.id)return;joy.active=false;joy.id=null;joy.vx=joy.vy=0;ring.style.display='none'}window.addEventListener('pointerup',clearTouch);window.addEventListener('pointercancel',clearTouch);window.addEventListener('blur',()=>{keys.clear();clearTouch()});
+const keyMap={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};window.addEventListener('keydown',e=>{if(keyMap[e.code]){enableSound()}if(keyMap[e.code]){e.preventDefault();keys.add(keyMap[e.code])}});window.addEventListener('keyup',e=>{if(keyMap[e.code]){e.preventDefault();keys.delete(keyMap[e.code])}});
+function resize(){renderer.setSize(innerWidth,innerHeight);const visible=9.9,aspect=innerWidth/innerHeight;camera.left=-visible*aspect/2;camera.right=visible*aspect/2;camera.top=visible/2;camera.bottom=-visible/2;camera.updateProjectionMatrix()}window.addEventListener('resize',resize);resize();
+function angleDelta(a,b){return Math.atan2(Math.sin(a-b),Math.cos(a-b))}
+function spring(x,v,goal,k,c,dt){v+=(k*(goal-x)-c*v)*dt;return[x+v*dt,v]}
+function animateGait(person,dt){
+ const speed=Math.hypot(person.velocity.x,person.velocity.y);
+ let amount=clamp(speed/(person.player?3.65:Math.max(person.speed,.5)),0,1);
+ person.phase+=speed*dt*2.0;
+ const {arms,legs,bob}=person;
+ for(let i=0;i<2;i++){
+  const phase=person.phase+i*Math.PI;
+  const t=((phase/(2*Math.PI))%1+1)%1,stance=t<.60;
+  let stride,knee,heel;
+  if(stance){const u=t/.60;stride=.5-u;knee=.065+.04*Math.sin(u*Math.PI);heel=u<.2?-.19*(1-u/.2):u>.76?.20*(u-.76)/.24:0}
+  else{const u=(t-.6)/.4;stride=-.5+u;knee=.12+.75*Math.sin(u*Math.PI);heel=-.10*Math.sin(u*Math.PI)}
+  const hip=legs[i].hip;
+  hip.rotation.x=stride*.72*amount;hip.rotation.z=0;
+  legs[i].knee.rotation.x=-knee*amount;
+  legs[i].foot.rotation.x=(heel+knee*.53-stride*.12)*amount;
+  const arm=arms[i];
+  const pitchGoal=-hip.rotation.x*.82,rollGoal=arm.side*.045+Math.sin(phase)*.015*amount;
+  const bendGoal=.14+.25*(.5+.5*Math.sin(phase))*amount;
+  [arm.pitch,arm.pitchV]=spring(arm.pitch,arm.pitchV,pitchGoal,36,10.5,dt);
+  [arm.roll,arm.rollV]=spring(arm.roll,arm.rollV,rollGoal,29,10,dt);
+  [arm.bend,arm.bendV]=spring(arm.bend,arm.bendV,bendGoal,25,9.5,dt);
+  arm.shoulder.rotation.x=clamp(arm.pitch,-.34,.78);arm.shoulder.rotation.z=arm.roll;arm.elbow.rotation.x=arm.bend;arm.shoulder.rotation.y=0;
+ }
+ const sideways=-person.velocity.x*Math.cos(person.rotation)-person.velocity.y*Math.sin(person.rotation);
+ [person.bodyRoll,person.bodyRollV]=spring(person.bodyRoll,person.bodyRollV,clamp(sideways*.015,-.055,.055),28,9,dt);
+ [person.bodyPitch,person.bodyPitchV]=spring(person.bodyPitch,person.bodyPitchV,clamp(speed*.013,0,.045),26,9,dt);
+ bob.rotation.z=person.bodyRoll+.012*Math.sin(person.phase*2)*amount;
+ bob.rotation.x=person.bodyPitch;bob.position.y=.014*(1-Math.cos(person.phase*2))*amount;
+ person.upperBody.rotation.x=0;person.upperBody.rotation.z=0;
+ let headGoal=0,red=0;
+ if(person.reaction){const t=person.reactionTime,r=person.reaction;
+  if(r==='fall'){
+   // Drop into a deep kneel with knees and hands toward the travel direction.
+   // Body remains upright enough to show a knee-first stumble, not plank fall.
+   const drop=blendWindow(t,.10,.72)*(1-blendWindow(t,2.85,3.85));
+   const topple=blendWindow(t,.48,1.05)*(1-blendWindow(t,2.35,3.48));
+   bob.position.y-=.60*drop;
+   for(let i=0;i<2;i++){
+    legs[i].hip.rotation.x=(i===0?1.17:.66)*drop;
+    legs[i].knee.rotation.x=-(i===0?1.7:1.45)*drop;
+    legs[i].foot.rotation.x=.48*drop;
+    arms[i].shoulder.rotation.x=1.05*topple;
+    arms[i].elbow.rotation.x=.58*topple;
+   }
+   person.upperBody.rotation.x=-.78*topple;
+   headGoal= t>1.38&&t<3.5?facePlayerYaw(person)*blendWindow(t,1.4,2.0)*(1-blendWindow(t,3.0,3.6)):0;
+  }else if(r==='limp'){
+   // One shoe-less leg lifts off the floor while the other hops 3 times.
+   const window=blendWindow(t,.26,.48)*(1-blendWindow(t,2.74,3.22));
+   const hopPhase=clamp((t-.46)/2.32,0,1)*Math.PI*6;
+   const hop=Math.pow(Math.max(0,Math.sin(hopPhase)),1.25)*window;
+   const injured=person.reactionLeg,good=1-injured;
+   legs[injured].hip.rotation.x=.62*window;
+   legs[injured].knee.rotation.x=-1.13*window;
+   legs[injured].foot.rotation.x=.36*window;
+   legs[good].hip.rotation.x=.08*window;
+   legs[good].knee.rotation.x=-.26*hop;
+   bob.position.y+=.16*hop;
+   bob.rotation.z+=legs[injured].side*.15*window;
+   arms[0].shoulder.rotation.z=-.24*window;
+   arms[1].shoulder.rotation.z=.24*window;
+   arms[0].elbow.rotation.x=.16*window;
+   arms[1].elbow.rotation.x=.16*window;
+  }else if(r==='retrieve'){
+   const startup=blendWindow(t,.05,.50)*(1-blendWindow(t,.80,1.65));
+   const chase=blendWindow(t,1.0,1.85);
+   const pickup=person.picked?blendWindow(t-person.pickupAt,.12,.42)*(1-blendWindow(t-person.pickupAt,1.18,1.68)):0;
+   const bend=person.picked?Math.max(.30,pickup):chase*.78+startup*.38;
+   person.upperBody.rotation.x=-.65*bend;
+   bob.rotation.x-=.12*startup;
+   arms[0].shoulder.rotation.x=.96*bend;
+   arms[1].shoulder.rotation.x=1.02*bend;
+   arms[0].elbow.rotation.x=.31*bend;
+   arms[1].elbow.rotation.x=.40*bend;
+   if(person.picked){
+    bob.position.y-=.42*pickup;
+    for(const leg of legs){leg.hip.rotation.x=.42*pickup;leg.knee.rotation.x=-.80*pickup}
+    arms[person.reactionLeg].shoulder.rotation.x=1.24*pickup;
+    arms[person.reactionLeg].elbow.rotation.x=.36*pickup;
+   }
+   headGoal=t<1.65?facePlayerYaw(person)*blendWindow(t,.3,.65)*(1-blendWindow(t,1.25,1.6)):0;
+  }else if(r==='angry'){
+   const upset=blendWindow(t,.38,.82)*(1-blendWindow(t,2.6,3.25));
+   red=upset;
+   for(let i=0;i<2;i++){
+    arms[i].shoulder.rotation.x=1.05*upset+.16*upset*Math.sin(t*14+i*.8);
+    arms[i].shoulder.rotation.z=(i===0?-.16:.16)*upset;
+    arms[i].elbow.rotation.x=.38*upset+.16*upset*Math.sin(t*13+i*1.2);
+   }
+   person.upperBody.rotation.z=.045*upset*Math.sin(t*11);
+   headGoal=.12*upset*Math.sin(t*9);
+  }
+ }
+ [person.headTurn,person.headTurnV]=spring(person.headTurn,person.headTurnV,headGoal,34,11,dt);
+ person.headPivot.rotation.y=person.headTurn;
+ if(person.faceMesh)person.faceMesh.material.color.copy(person.normalFace).lerp(new THREE.Color('#e86b62'),red*.83);
+}
+// Persistent headings: keep a long route, only make small corrections to avoid others.
+// One avoidance side per person keeps two walkers from oscillating back and forth.
+function chooseNewDirection(npc,angle=null){
+ npc.desiredAngle=angle===null?npc.desiredAngle+rand(-.55,.55):angle;
+ npc.timer=rand(7.5,15.0);
+ npc.stuck=0;
+}
+function updateNPC(npc,dt){
+ npc.triggerCooldown=Math.max(0,npc.triggerCooldown-dt);
+ if(updateReaction(npc,dt))return;
+ npc.timer-=dt;
+ const pos=npc.root.position;
+ if(npc.timer<=0)chooseNewDirection(npc);
+ let wx=-Math.sin(npc.desiredAngle),wz=-Math.cos(npc.desiredAngle);
+
+ let steerX=wx,steerZ=wz;
+ let closest=10;
+ for(const other of nearbyEntities(pos.x,pos.z)){
+  if(other===npc)continue;
+  const rx=other.root.position.x-pos.x,rz=other.root.position.z-pos.z;
+  const d2=rx*rx+rz*rz;if(d2>6.76||d2<.000001)continue;
+  const d=Math.sqrt(d2),reach=npc.radius+other.radius;
+  const forward=(rx*wx+rz*wz)/d;
+  // Do not steer around people behind us, unless they are already overlapping.
+  if(forward<-.24&&d>reach+.14)continue;
+  closest=Math.min(closest,d);
+  const urgent=Math.max(0,(reach+1.1-d)/1.1);
+  const gap=Math.max(0,(reach+.25-d)/Math.max(.1,reach+.25));
+  const rightX=-wz,rightZ=wx;
+  let sideways=rx*rightX+rz*rightZ;
+  const side= Math.abs(sideways)<.13?npc.avoidSide:-Math.sign(sideways);
+  const force=(urgent*.9+gap*1.7)*(forward>.15?1:.42);
+  steerX+=rightX*side*force;
+  steerZ+=rightZ*side*force;
+  steerX-=rx/d*gap*.45;
+  steerZ-=rz/d*gap*.45;
+ }
+ // Soft static-obstacle avoidance before colliding with street furniture.
+ for(const side of [-1,1])for(let k=0;k<5;k++){
+  const centerZ=Math.round(pos.z/56)*56;
+  const localZ=-22+k*11.15+(side>0?1.9:0);
+  const v=(k*11+(side>0?7:3)+200)%5;
+  const x0=Math.round(pos.x/56)*56+side*(v===1?10.1:v===2?9.2:8.0);
+  const z=centerZ+localZ;
+  const rx=x0-pos.x,rz=z-pos.z,dist=Math.hypot(rx,rz);
+  if(dist>2.1||dist<.01)continue;
+  const forward=(rx*wx+rz*wz)/dist;
+  if(forward<-.1)continue;
+  const push=(2.1-dist)/2.1;
+  steerX-=rx/dist*push*2.0;steerZ-=rz/dist*push*2.0;
+ }
+ // Look ahead and steer sideways along the obstacle instead of pushing into it.
+ const aheadX=pos.x+wx*1.2,aheadZ=pos.z+wz*1.2;
+ if(hitsAnyScenery(aheadX,aheadZ,npc.radius*.9)){
+  const leftX=wz,leftZ=-wx,rightX=-wz,rightZ=wx;
+  const leftFree=!hitsAnyScenery(pos.x+leftX*1.2+wx*.7,pos.z+leftZ*1.2+wz*.7,npc.radius*.9);
+  const rightFree=!hitsAnyScenery(pos.x+rightX*1.2+wx*.7,pos.z+rightZ*1.2+wz*.7,npc.radius*.9);
+  const side=leftFree&&!rightFree?-1:rightFree&&!leftFree?1:npc.avoidSide;
+  steerX+= (side>0?rightX:leftX)*3.2-wx*.8;
+  steerZ+= (side>0?rightZ:leftZ)*3.2-wz*.8;
+ }
+ const mag=Math.hypot(steerX,steerZ);
+ if(mag>.001){steerX/=mag;steerZ/=mag}
+ const wantAngle=Math.atan2(-steerX,-steerZ);
+ const actualAngle=Math.atan2(-npc.velocity.x,-npc.velocity.y);
+ const currentSpeed=Math.hypot(npc.velocity.x,npc.velocity.y);
+ const smoothedAngle=currentSpeed>.05?actualAngle+clamp(angleDelta(wantAngle,actualAngle),-2.6*dt,2.6*dt):wantAngle;
+ const slowdown=closest<.72?.60:closest<1.15?.85:1;
+ const desiredSpeed=npc.speed*slowdown;
+ npc.velocity.x+=(-Math.sin(smoothedAngle)*desiredSpeed-npc.velocity.x)*(1-Math.exp(-5*dt));
+ npc.velocity.y+=(-Math.cos(smoothedAngle)*desiredSpeed-npc.velocity.y)*(1-Math.exp(-5*dt));
+ const prevX=pos.x,prevZ=pos.z;
+ pos.x+=npc.velocity.x*dt;pos.z+=npc.velocity.y*dt;
+ preventStorefront(npc,prevX,prevZ);
+ const actualStep=Math.hypot(pos.x-prevX,pos.z-prevZ);
+ // A person blocked by a shop/planter must not appear to be walking in place.
+ if(actualStep < npc.speed*dt*.12){npc.blockedFor=(npc.blockedFor||0)+dt}
+ else npc.blockedFor=Math.max(0,(npc.blockedFor||0)-dt*1.6);
+ if(npc.blockedFor>.5){
+  const turn=npc.avoidSide*(Math.PI*.58+rand(0,.48));
+  chooseNewDirection(npc,npc.rotation+turn);
+  npc.avoidSide*=-1;
+  npc.blockedFor=0;
+  // Discard a velocity pushing against a solid obstacle.
+  npc.velocity.multiplyScalar(.18);
+ }
+
+ const move=Math.hypot(npc.velocity.x,npc.velocity.y);
+ if(move>.055){const aim=Math.atan2(-npc.velocity.x,-npc.velocity.y);npc.rotation+=angleDelta(aim,npc.rotation)*Math.min(1,8*dt);npc.root.rotation.y=npc.rotation}
+ if(actualStep<npc.speed*dt*.17)npc.stuck+=dt;else npc.stuck=Math.max(0,npc.stuck-dt*2);
+ if(npc.stuck>.65){chooseNewDirection(npc,npc.rotation+npc.avoidSide*rand(1.0,2.1));npc.avoidSide*=-1}
+}
+// Disc collision resolution: player is never passed through by crowds, nor vice versa.
+function resolveCollision(a,b){
+ const ax=a.root.position.x,az=a.root.position.z,bx=b.root.position.x,bz=b.root.position.z;
+ let dx=ax-bx,dz=az-bz,dist=Math.hypot(dx,dz),minimum=a.radius+b.radius+.025;
+ if(dist>=minimum)return;
+ if(dist<.00001){dx=.001;dz=1;dist=1}
+ const nx=dx/dist,nz=dz/dist,overlap=minimum-dist;
+ const pa=a.player?0:.5,pb=b.player?1:.5;
+ // Player can be blocked without being displaced by passive NPC corrections.
+ a.root.position.x+=nx*overlap*pa;a.root.position.z+=nz*overlap*pa;
+ b.root.position.x-=nx*overlap*pb;b.root.position.z-=nz*overlap*pb;
+ const av=a.velocity.x*nx+a.velocity.y*nz;
+ const bv=b.velocity.x*nx+b.velocity.y*nz;
+ if(av<0){a.velocity.x-=nx*av;a.velocity.y-=nz*av}
+ if(bv>0){b.velocity.x-=nx*bv;b.velocity.y-=nz*bv}
+ // No random instantaneous turning on contact. Steering and stuck recovery handle it.
+}
+// Continuous player collision: move per small substep and stop at barriers (no teleport through NPCs).
+function movePlayer(dt){
+ let dx=(keys.has('right')?1:0)-(keys.has('left')?1:0)+joy.vx;
+ let dz=(keys.has('down')?1:0)-(keys.has('up')?1:0)+joy.vy;
+ const length=Math.hypot(dx,dz);if(length>1){dx/=length;dz/=length}
+ player.velocity.x+=(dx*player.speed-player.velocity.x)*(1-Math.exp(-11*dt));
+ player.velocity.y+=(dz*player.speed-player.velocity.y)*(1-Math.exp(-11*dt));
+ const pos=player.root.position;
+ const moveAxis=(axis,delta)=>{const old=pos[axis];pos[axis]=old+delta;if(hitsAnyScenery(pos.x,pos.z,player.radius*.77)){pos[axis]=old;player.velocity[axis==='x'?'x':'y']=0;return}for(const npc of nearbyEntities(pos.x,pos.z)){if(npc===player)continue;let d=Math.hypot(pos.x-npc.root.position.x,pos.z-npc.root.position.z);if(d<player.radius+npc.radius+.02){pos[axis]=old;player.velocity[axis==='x'?'x':'y']=0;break}}};
+ moveAxis('x',player.velocity.x*dt);moveAxis('z',player.velocity.y*dt);
+ const speed=Math.hypot(player.velocity.x,player.velocity.y);
+ if(speed>.055){const aim=Math.atan2(-player.velocity.x,-player.velocity.y);player.rotation+=angleDelta(aim,player.rotation)*Math.min(1,14*dt);player.root.rotation.y=player.rotation}
+}
+const follow=new THREE.Vector3();let last=performance.now();function frame(now){
+ requestAnimationFrame(frame);const dt=Math.min((now-last)/1000,.04);last=now;
+ if(gameState==='tutorial'){
+  // No forced pause: input starts the clock on its very first moving frame.
+  const inputX=(keys.has('right')?1:0)-(keys.has('left')?1:0)+joy.vx;
+  const inputY=(keys.has('down')?1:0)-(keys.has('up')?1:0)+joy.vy;
+  if(Math.hypot(inputX,inputY)>.07){gameState='playing';tutorialTime=0}
+ }
+ if(gameState==='playing'){
+  tutorialTime+=dt;if(tutorialTime>3.1)tutorialEl.classList.add('hidden');
+  remaining=Math.max(0,remaining-dt);const seconds=Math.ceil(remaining);
+  timerEl.textContent='00:'+String(seconds).padStart(2,'0');timerEl.classList.toggle('urgent',seconds<=5);
+  if(remaining<=0)endGame();
+ }
+ if(gameState==='tutorial'||gameState==='playing'){
+  const steps=Math.max(1,Math.ceil(dt/.016)),step=dt/steps;
+  for(let sub=0;sub<steps;sub++){
+   recenterCrowd();
+   rebuildNeighborGrid();
+   for(const npc of crowd)updateNPC(npc,step);
+   movePlayer(step);
+   resolveNearbyCollisions();
+   // Correct overlap correction if it inadvertently pushed an NPC into a static prop.
+   for(const npc of crowd){
+    if(hitsAnyScenery(npc.root.position.x,npc.root.position.z,npc.radius*.77)){
+     npc.blockedFor=Math.max(npc.blockedFor||0,.4);
+    }
+   }
+   animateGait(player,step);for(const npc of crowd)animateGait(npc,step);
+   heelContacts();shoePhysics(step);recycleShoelessCrowd(step);
+  }
+ }
+ if(flashTime>0){flashTime-=dt;if(flashTime<=0)flashEl.style.opacity='0'}
+ shiftTown();
+ const pos=player.root.position,goal=new THREE.Vector3(pos.x,0,pos.z-2.05);
+ follow.lerp(goal,1-Math.exp(-7*dt));camera.position.set(follow.x,16.5,follow.z+13.6);camera.lookAt(follow.x,0,follow.z);
+ sun.position.set(pos.x-6,14,pos.z+8);sun.target.position.set(pos.x,0,pos.z);
+ renderer.render(scene,camera);
+}
+document.getElementById('loading').remove();requestAnimationFrame(frame);
+}catch(e){console.error(e);document.getElementById('loading').remove();document.getElementById('error').style.display='grid'}
+</script></body></html>
